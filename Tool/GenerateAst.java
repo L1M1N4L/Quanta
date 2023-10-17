@@ -18,19 +18,38 @@ public class GenerateAst {
       "Literal  : Object value",
       "Unary    : Token operator, Expr right"
     ));
+    
   }
   //baseName is “Expr”, which is both the name of the class and the name of the file it outputs. 
- private static void defineAst(
+    private static void defineAst(
         String outputDir, String baseName, List<String> types)
         throws IOException {
-    String path = outputDir + "/" + baseName + ".java";
-    PrintWriter writer = new PrintWriter(path, "UTF-8");
+     String path = outputDir + "/" + baseName + ".java";
+     PrintWriter writer = new PrintWriter(path, "UTF-8");
+
+    private static void defineVisitor(
+        PrintWriter writer, String baseName, List<String> types) {
+      writer.println("  interface Visitor<R> {");
+  
+      for (String type : types) {
+        String typeName = type.split(":")[0].trim();
+        writer.println("    R visit" + typeName + baseName + "(" +
+            typeName + " " + baseName.toLowerCase() + ");");
+      }
+      
+        // The base accept() method.
+    writer.println();
+    writer.println("  abstract <R> R accept(Visitor<R> visitor);");
+
+    writer.println("  }");
+    }
 
     writer.println("package com.craftinginterpreters.lox;");
     writer.println();
     writer.println("import java.util.List;");
     writer.println();
     writer.println("abstract class " + baseName + " {");
+    defineVisitor(writer, baseName, types);
         // The AST classes.
     for (String type : types) {
         String className = type.split(":")[0].trim();
@@ -58,6 +77,13 @@ public class GenerateAst {
     }
 
     writer.println("    }");
+     // Visitor pattern.
+     writer.println();
+     writer.println("    @Override");
+     writer.println("    <R> R accept(Visitor<R> visitor) {");
+     writer.println("      return visitor.visit" +
+         className + baseName + "(this);");
+     writer.println("    }");
 
     // Fields.
     writer.println();
