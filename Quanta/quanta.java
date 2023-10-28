@@ -49,11 +49,13 @@ private static void runPrompt() throws IOException {
     Scanner scanner = new Scanner(source);
     List<Token> tokens = scanner.scanTokens();
     
+    Parser parser = new Parser(tokens);
+    Expr expression = parser.parse();
 
-    // For now, just print the tokens.
-    for (Token token : tokens) {
-      System.out.println(token);
-    }
+    // Stop if there was a syntax error.
+    if (hadError) return;
+
+    System.out.println(new AstPrinter().print(expression));
   }
 
 //error handling 
@@ -67,3 +69,31 @@ private static void runPrompt() throws IOException {
         "[line " + line + "] Error" + where + ": " + message);
     hadError = true;
   }
+  static void error(Token token, String message) {
+    if (token.type == TokenType.EOF) {
+      report(token.line, " at end", message);
+    } else {
+      report(token.line, " at '" + token.lexeme + "'", message);
+    }
+  }  private void synchronize() {
+    advance();
+
+    while (!isAtEnd()) {
+      if (previous().type == SEMICOLON) return;
+
+      switch (peek().type) {
+        case CLASS:
+        case FUN:
+        case VAR:
+        case FOR:
+        case IF:
+        case WHILE:
+        case PRINT:
+        case RETURN:
+          return;
+      }
+
+      advance();
+    }
+  }
+
